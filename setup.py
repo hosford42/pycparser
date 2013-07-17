@@ -3,7 +3,6 @@ from distutils.core import setup
 
 version25 = False
 if sys.version_info[0] < 2 or (sys.version_info[0] == 2 and sys.version_info[1] < 6):
-    print "Generating Python 2.5-compatible version"
     version25 = True
     import shutil
     source_path = r'pycparser'
@@ -60,5 +59,4 @@ setup(
 
 if version25:
     shutil.rmtree('pycparser-2.5')
-    print "Removing Python 2.5-compatible version"
 
