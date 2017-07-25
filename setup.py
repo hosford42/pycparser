@@ -1,36 +1,33 @@
 import os, sys
-from distutils.core import setup
+try:
+    from setuptools import setup
+    from setuptools.command.install import install as _install
+    from setuptools.command.sdist import sdist as _sdist
+except ImportError:
+    from distutils.core import setup
+    from distutils.command.install import install as _install
+    from distutils.command.sdist import sdist as _sdist
 
-version25 = False
-if sys.version_info[0] < 2 or (sys.version_info[0] == 2 and sys.version_info[1] < 6):
-    version25 = True
-    import shutil
-    source_path = r'pycparser'
-    save_path = r'pycparser-2.5'
-    if os.path.isdir(save_path):
-        shutil.rmtree(save_path)
-    shutil.copytree(source_path, save_path)
-    for dir_path, dir_names, file_names in os.walk(save_path):
-        for file_name in file_names:
-          if not file_name.endswith('.py'):
-              continue
-          file_path = os.path.join(dir_path, file_name)
-          new_file_path = file_path + '.revised'
-          new_file = open(new_file_path, 'w')
-          wrote_with_import = False
-          for line in open(file_path):
-              stripped_line = line.strip()
-              if not wrote_with_import and not stripped_line.startswith('#'):
-                  new_file.write('\nfrom __future__ import with_statement\n\n')
-                  wrote_with_import = True
-                  new_file.write(line)
-              elif stripped_line.startswith('except') and ' as ' in line:
-                  new_file.write(line.replace(' as ', ', '))
-              else:
-                  new_file.write(line)
-          new_file.close()
-          os.remove(file_path)
-          os.rename(new_file_path, file_path)
+
+def _run_build_tables(dir):
+    from subprocess import call
+    call([sys.executable, '_build_tables.py'],
+         cwd=os.path.join(dir, 'pycparser'))
+
+
+class install(_install):
+    def run(self):
+        _install.run(self)
+        self.execute(_run_build_tables, (self.install_lib,),
+                     msg="Build the lexing/parsing tables")
+
+
+class sdist(_sdist):
+    def make_release_tree(self, basedir, files):
+        _sdist.make_release_tree(self, basedir, files)
+        self.execute(_run_build_tables, (basedir,),
+                     msg="Build the lexing/parsing tables")
+
 
 setup(
     # metadata
@@ -43,7 +40,7 @@ setup(
         C compilers or analysis tools.
     """,
     license='BSD',
-    version='2.09.1',
+    version='2.18',
     author='Eli Bendersky',
     maintainer='Eli Bendersky',
     author_email='eliben@gmail.com',
@@ -54,9 +51,5 @@ setup(
         'Programming Language :: Python :: 3',],
     packages=['pycparser', 'pycparser.ply'],
     package_data={'pycparser': ['*.cfg']},
-    package_dir={'pycparser' : 'pycparser-2.5' if version25 else 'pycparser'},
+    cmdclass={'install': install, 'sdist': sdist},
 )
-
-if version25:
-    shutil.rmtree('pycparser-2.5')
-

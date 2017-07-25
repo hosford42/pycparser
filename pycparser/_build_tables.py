@@ -6,18 +6,17 @@
 # Also generates AST code from the configuration file.
 # Should be called from the pycparser directory.
 #
-# Copyright (C) 2008-2012, Eli Bendersky
+# Eli Bendersky [http://eli.thegreenplace.net]
 # License: BSD
 #-----------------------------------------------------------------
 
 # Generate c_ast.py
-#
 from _ast_gen import ASTCodeGenerator
 ast_gen = ASTCodeGenerator('_c_ast.cfg')
 ast_gen.generate(open('c_ast.py', 'w'))
 
 import sys
-sys.path.extend(['.', '..'])
+sys.path[0:0] = ['.', '..']
 from pycparser import c_parser
 
 # Generates the tables
